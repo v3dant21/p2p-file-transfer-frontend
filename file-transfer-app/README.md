@@ -1,36 +1,71 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 📁 P2P File Transfer – Frontend
 
-## Getting Started
+This is the **frontend** of the [P2P File Transfer](https://github.com/v3dant21/p2p-file-transfer-frontend) project, built using **Next.js 13** with the App Router. It allows users to send and receive files in real-time over WebSockets, powered by a **Rust + Axum** backend.
 
-First, run the development server:
+## 🔥 Features
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- ✅ Built with **Next.js 13 App Router**
+- ✅ Real-time communication using **WebSockets**
+- ✅ **Peer-to-peer (P2P)** file transfers
+- ✅ Supports **large file** transfers
+- ✅ Clean and minimal **UI/UX**
+
+## 🛠️ Technologies Used
+
+- **Next.js 13** – Frontend framework
+- **React Hooks** – State management
+- **WebSockets** – Real-time file transfer
+- **TypeScript** – Ensures type safety
+
+## 🚀 Getting Started
+
+1. **Clone the repo**
+   ```bash
+   git clone https://github.com/v3dant21/p2p-file-transfer-frontend.git
+   cd p2p-file-transfer-frontend
+   ```
+
+2. **Install dependencies**
+   ```bash
+   npm install
+   # or
+   yarn
+   ```
+
+3. **Run the development server**
+   ```bash
+   npm run dev
+   # or
+   yarn dev
+   ```
+
+4. **Ensure the Rust backend is running**  
+   Backend repo: [p2p-FTS](https://github.com/v3dant21/p2p-FTS)
+
+## 📆 Project Structure
+
+```
+/app        # Next.js 13 App Router structure
+/components # Reusable UI components
+/hooks      # Custom React hooks
+/utils      # Utility functions
+/public     # Static files
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 🧹 Backend Integration
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+This frontend connects to a **Rust Axum backend** for WebSocket-based file exchange. Make sure the backend is up and reachable at the correct endpoint.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 📜 License
 
-## Learn More
+This project is licensed under the [MIT License](LICENSE).
 
-To learn more about Next.js, take a look at the following resources:
+## 🙌 Contributing
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Contributions, issues, and feature requests are welcome!  
+Feel free to open a pull request or issue.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## 🔗 Links
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- 🌐 **Frontend Repo**: [p2p-file-transfer-frontend](https://github.com/v3dant21/p2p-file-transfer-frontend)
+- 🧠 **Backend Repo**:[p2p-file-transfer-backend](https://github.com/v3dant21/p2p-file-transfer-backend)
