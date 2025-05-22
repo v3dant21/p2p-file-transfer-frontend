@@ -1,0 +1,1378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>P2P File Transfer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --background: 0 0% 100%;
+            --foreground: 240 10% 3.9%;
+            --card: 0 0% 100%;
+            --card-foreground: 240 10% 3.9%;
+            --primary: 240 5.9% 10%;
+            --primary-foreground: 0 0% 98%;
+            --secondary: 240 4.8% 95.9%;
+            --secondary-foreground: 240 5.9% 10%;
+            --muted: 240 4.8% 95.9%;
+            --muted-foreground: 240 3.8% 46.1%;
+            --accent: 240 4.8% 95.9%;
+            --accent-foreground: 240 5.9% 10%;
+            --destructive: 0 84.2% 60.2%;
+            --destructive-foreground: 0 0% 98%;
+            --border: 240 5.9% 90%;
+            --input: 240 5.9% 90%;
+            --ring: 240 5.9% 10%;
+            --radius: 0.75rem;
+        }
+
+        .dark {
+            --background: 240 10% 3.9%;
+            --foreground: 0 0% 98%;
+            --card: 240 10% 3.9%;
+            --card-foreground: 0 0% 98%;
+            --primary: 0 0% 98%;
+            --primary-foreground: 240 5.9% 10%;
+            --secondary: 240 3.7% 15.9%;
+            --secondary-foreground: 0 0% 98%;
+            --muted: 240 3.7% 15.9%;
+            --muted-foreground: 240 5% 64.9%;
+            --accent: 240 3.7% 15.9%;
+            --accent-foreground: 0 0% 98%;
+            --destructive: 0 62.8% 30.6%;
+            --destructive-foreground: 0 0% 98%;
+            --border: 240 3.7% 15.9%;
+            --input: 240 3.7% 15.9%;
+            --ring: 240 4.9% 83.9%;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background-color: hsl(var(--background));
+            color: hsl(var(--foreground));
+            min-height: 100vh;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        /* Container */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 1rem;
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+        }
+
+        /* Button styles */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background-color: hsl(var(--primary));
+            color: hsl(var(--primary-foreground));
+        }
+
+        .btn-primary:hover {
+            background-color: hsl(var(--primary) / 0.9);
+        }
+
+        .btn-secondary {
+            background-color: hsl(var(--secondary));
+            color: hsl(var(--secondary-foreground));
+        }
+
+        .btn-secondary:hover {
+            background-color: hsl(var(--secondary) / 0.8);
+        }
+
+        .btn-outline {
+            background-color: transparent;
+            border: 1px solid hsl(var(--border));
+            color: hsl(var(--foreground));
+        }
+
+        .btn-outline:hover {
+            background-color: hsl(var(--accent));
+            color: hsl(var(--accent-foreground));
+        }
+
+        .btn-ghost {
+            background-color: transparent;
+            color: hsl(var(--foreground));
+        }
+
+        .btn-ghost:hover {
+            background-color: hsl(var(--accent));
+            color: hsl(var(--accent-foreground));
+        }
+
+        .btn-lg {
+            padding: 1.5rem 2rem;
+            font-size: 1rem;
+            border-radius: 0.75rem;
+        }
+
+        .btn-icon {
+            width: 2.25rem;
+            height: 2.25rem;
+            padding: 0;
+            border-radius: 50%;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Theme toggle */
+        .theme-toggle {
+            position: relative;
+        }
+
+        .theme-toggle .sun {
+            display: block;
+        }
+
+        .theme-toggle .moon {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .dark .theme-toggle .sun {
+            display: none;
+        }
+
+        .dark .theme-toggle .moon {
+            display: block;
+        }
+
+        /* Main layout */
+        .main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 3rem 1rem;
+            min-height: calc(100vh - 200px);
+        }
+
+        /* Home page styles */
+        .hero {
+            text-align: center;
+            max-width: 32rem;
+            margin-bottom: 6rem;
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            background-color: hsl(var(--secondary) / 0.8);
+            font-size: 0.75rem;
+            font-weight: 500;
+            margin-bottom: 2rem;
+        }
+
+        .hero h1 {
+            font-size: 3rem;
+            font-weight: bold;
+            line-height: 1.1;
+            margin-bottom: 1.5rem;
+        }
+
+        .hero p {
+            font-size: 1.125rem;
+            color: hsl(var(--muted-foreground));
+            margin-bottom: 2rem;
+        }
+
+        .hero-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        /* Features grid */
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            width: 100%;
+            max-width: 60rem;
+        }
+
+        .feature-card {
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            border: 1px solid hsl(var(--border) / 0.5);
+            background-color: hsl(var(--background) / 0.5);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        .feature-icon {
+            width: 2.5rem;
+            height: 2.5rem;
+            border-radius: 0.5rem;
+            background-color: hsl(var(--secondary) / 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1rem;
+        }
+
+        .feature-icon svg {
+            width: 1.25rem;
+            height: 1.25rem;
+        }
+
+        .feature-card h3 {
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .feature-card p {
+            font-size: 0.875rem;
+            color: hsl(var(--muted-foreground));
+        }
+
+        /* Send/Receive page styles */
+        .page-container {
+            width: 100%;
+            max-width: 28rem;
+            margin: 0 auto;
+        }
+
+        .page-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .page-header h1 {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+
+        .page-header p {
+            color: hsl(var(--muted-foreground));
+        }
+
+        /* File upload area */
+        .file-drop-zone {
+            width: 100%;
+            border: 2px dashed hsl(var(--border) / 0.5);
+            border-radius: 0.75rem;
+            padding: 2.5rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-bottom: 2rem;
+        }
+
+        .file-drop-zone:hover {
+            background-color: hsl(var(--secondary) / 0.5);
+            border-color: hsl(var(--border));
+        }
+
+        .file-drop-zone.dragover {
+            background-color: hsl(var(--secondary) / 0.8);
+            border-color: hsl(var(--primary));
+        }
+
+        .file-drop-icon {
+            width: 4rem;
+            height: 4rem;
+            margin: 0 auto 1rem;
+            border-radius: 0.75rem;
+            background-color: hsl(var(--secondary) / 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.2s;
+        }
+
+        .file-drop-zone:hover .file-drop-icon {
+            transform: scale(1.05);
+        }
+
+        /* File card */
+        .file-card {
+            display: flex;
+            align-items: center;
+            padding: 1.25rem;
+            border-radius: 0.75rem;
+            border: 1px solid hsl(var(--border) / 0.5);
+            background-color: hsl(var(--background) / 0.5);
+            margin-bottom: 1.5rem;
+        }
+
+        .file-card-icon {
+            width: 3rem;
+            height: 3rem;
+            border-radius: 0.5rem;
+            background-color: hsl(var(--secondary) / 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 1rem;
+        }
+
+        .file-card-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .file-card-name {
+            font-size: 0.875rem;
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .file-card-meta {
+            display: flex;
+            align-items: center;
+            margin-top: 0.25rem;
+            font-size: 0.75rem;
+            color: hsl(var(--muted-foreground));
+        }
+
+        .file-card-dot {
+            width: 0.375rem;
+            height: 0.375rem;
+            border-radius: 50%;
+            background-color: hsl(var(--primary) / 0.7);
+            margin-right: 0.5rem;
+        }
+
+        /* Input field */
+        .input {
+            width: 100%;
+            height: 2.25rem;
+            padding: 0 0.75rem;
+            border: 1px solid hsl(var(--input));
+            border-radius: 0.375rem;
+            background-color: transparent;
+            font-size: 0.875rem;
+            transition: border-color 0.2s;
+        }
+
+        .input:focus {
+            outline: none;
+            border-color: hsl(var(--ring));
+            box-shadow: 0 0 0 1px hsl(var(--ring));
+        }
+
+        .input-group {
+            display: flex;
+            margin-bottom: 1.5rem;
+        }
+
+        .input-with-button {
+            flex: 1;
+            border-top-right-radius: 0;
+            border-bottom-right-radius: 0;
+            border-right: 0;
+        }
+
+        .input-button {
+            border-top-left-radius: 0;
+            border-bottom-left-radius: 0;
+        }
+
+        /* Progress bar */
+        .progress-container {
+            margin-bottom: 1rem;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 0.5rem;
+            background-color: hsl(var(--secondary));
+            border-radius: 9999px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, hsl(var(--primary)), hsl(var(--primary) / 0.8));
+            transition: width 0.3s ease;
+            position: relative;
+        }
+
+        .progress-fill::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        .progress-text {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.875rem;
+            margin-bottom: 0.5rem;
+        }
+
+        /* WiFi animation */
+        .wifi-animation {
+            position: relative;
+            width: 6rem;
+            height: 6rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 2rem auto;
+        }
+
+        .wifi-ring {
+            position: absolute;
+            border: 1px solid hsl(var(--primary) / 0.2);
+            border-radius: 50%;
+            opacity: 0;
+            transform: scale(0);
+            transition: all 0.7s ease;
+        }
+
+        .wifi-ring-1 {
+            width: 100%;
+            height: 100%;
+        }
+
+        .wifi-ring-2 {
+            width: 140%;
+            height: 140%;
+            transition-delay: 0.1s;
+        }
+
+        .wifi-ring-3 {
+            width: 180%;
+            height: 180%;
+            transition-delay: 0.2s;
+        }
+
+        .wifi-animation.active .wifi-ring {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .wifi-icon-container {
+            width: 3.5rem;
+            height: 3.5rem;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+            transition: all 0.5s;
+            background-color: hsl(var(--secondary));
+            color: hsl(var(--secondary-foreground));
+        }
+
+        .wifi-animation.active .wifi-icon-container {
+            background-color: hsl(var(--primary));
+            color: hsl(var(--primary-foreground));
+            box-shadow: 0 4px 20px hsl(var(--primary) / 0.3);
+            transform: scale(1.1);
+        }
+
+        /* Status messages */
+        .status-message {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 1rem;
+            border-radius: 0.75rem;
+            background-color: hsl(var(--secondary) / 0.5);
+            font-size: 0.875rem;
+            color: hsl(var(--muted-foreground));
+            margin-bottom: 1rem;
+        }
+
+        .status-dot {
+            width: 0.375rem;
+            height: 0.375rem;
+            background-color: currentColor;
+            border-radius: 50%;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        /* Loading spinner */
+        .spinner {
+            width: 1rem;
+            height: 1rem;
+            border: 2px solid transparent;
+            border-top: 2px solid currentColor;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Transfer ID display */
+        .transfer-id {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            background-color: hsl(var(--secondary));
+            font-size: 0.875rem;
+            margin-bottom: 1.5rem;
+        }
+
+        /* Error message */
+        .error-message {
+            width: 100%;
+            padding: 1rem;
+            background-color: hsl(var(--destructive) / 0.1);
+            border: 1px solid hsl(var(--destructive) / 0.2);
+            border-radius: 0.5rem;
+            color: hsl(var(--destructive-foreground));
+            font-size: 0.875rem;
+            margin-bottom: 1rem;
+        }
+
+        .dark .error-message {
+            background-color: hsl(var(--destructive) / 0.2);
+        }
+
+        /* Hidden elements */
+        .hidden {
+            display: none !important;
+        }
+
+        /* Utilities */
+        .text-center {
+            text-align: center;
+        }
+
+        .w-full {
+            width: 100%;
+        }
+
+        .mb-4 {
+            margin-bottom: 1rem;
+        }
+
+        .mb-6 {
+            margin-bottom: 1.5rem;
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 1.5rem;
+            font-size: 0.875rem;
+            color: hsl(var(--muted-foreground));
+            border-top: 1px solid hsl(var(--border) / 0.3);
+            margin-top: auto;
+        }
+
+        /* Responsive */
+        @media (max-width: 640px) {
+            .hero h1 {
+                font-size: 2.25rem;
+            }
+
+            .hero-buttons {
+                flex-direction: column;
+            }
+
+            .features {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Home Page -->
+    <div id="home-page">
+        <header class="header">
+            <div></div>
+            <button class="btn btn-ghost btn-icon theme-toggle" onclick="toggleTheme()">
+                <svg class="sun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="5"/>
+                    <path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72l1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+                </svg>
+                <svg class="moon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                </svg>
+            </button>
+        </header>
+
+        <main class="main">
+            <div class="hero">
+                <div class="hero-badge">WebSocket File Transfer</div>
+                <h1>Transfer files securely</h1>
+                <p>Fast, reliable, and efficient file transfers with our Axum server.</p>
+                <div class="hero-buttons">
+                    <button class="btn btn-primary btn-lg" onclick="showSendPage()">
+                        Send Files
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="m9 18 6-6-6-6"/>
+                        </svg>
+                    </button>
+                    <button class="btn btn-outline btn-lg" onclick="showReceivePage()">
+                        Receive Files
+                    </button>
+                </div>
+            </div>
+
+        </main>
+
+        <footer class="footer">
+            <p>No registration required. Files are transferred through our secure Axum server.</p>
+        </footer>
+    </div>
+
+    <!-- Send Page -->
+    <div id="send-page" class="hidden">
+        <header class="header">
+            <button class="btn btn-ghost btn-icon" onclick="showHomePage()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="m12 19-7-7 7-7"/>
+                </svg>
+            </button>
+            <button class="btn btn-ghost btn-icon theme-toggle" onclick="toggleTheme()">
+                <svg class="sun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="5"/>
+                    <path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72l1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+                </svg>
+                <svg class="moon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                </svg>
+            </button>
+        </header>
+
+        <main class="main">
+            <div class="page-container">
+                <!-- File Selection Step -->
+                <div id="send-step-1">
+                    <div class="page-header">
+                        <h1>Send a File</h1>
+                        <p>Select a file to share it securely via WebSocket</p>
+                    </div>
+
+                    <div class="file-drop-zone" onclick="document.getElementById('file-input').click()" ondrop="handleDrop(event)" ondragover="handleDragOver(event)" ondragenter="handleDragEnter(event)" ondragleave="handleDragLeave(event)">
+                        <input type="file" id="file-input" style="display: none;" onchange="handleFileSelect(event)">
+                        <div class="file-drop-icon">
+                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
+                                <polyline points="14,2 14,8 20,8"/>
+                            </svg>
+                        </div>
+                        <p style="font-weight: 500; margin-bottom: 0.25rem;">Drag and drop your file here</p>
+                        <p style="font-size: 0.875rem; color: hsl(var(--muted-foreground));">or click to browse</p>
+                    </div>
+                </div>
+
+                <!-- Link Generation Step -->
+                <div id="send-step-2" class="hidden">
+                    <div class="page-header">
+                        <h1>File Selected</h1>
+                        <p>Ready to generate a transfer link</p>
+                    </div>
+
+                    <div id="send-file-card"></div>
+
+                    <button class="btn btn-primary w-full btn-lg" onclick="generateTransferLink()" id="generate-link-btn">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                        </svg>
+                        Generate Transfer Link
+                    </button>
+                </div>
+
+                <!-- Transfer Step -->
+                <div id="send-step-3" class="hidden">
+                    <div class="page-header">
+                        <h1>Ready to Transfer</h1>
+                        <p>Share this link with the recipient</p>
+                    </div>
+
+                    <div class="wifi-animation" id="send-wifi-animation">
+                        <div class="wifi-ring wifi-ring-1"></div>
+                        <div class="wifi-ring wifi-ring-2"></div>
+                        <div class="wifi-ring wifi-ring-3"></div>
+                        <div class="wifi-icon-container">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 20h.01"/>
+                                <path d="M2 8.82a15 15 0 0 1 20 0"/>
+                                <path d="M5 12.859a10 10 0 0 1 14 0"/>
+                                <path d="M8.5 16.429a5 5 0 0 1 7 0"/>
+                            </svg>
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <input type="text" class="input input-with-button" id="transfer-link" readonly>
+                        <button class="btn btn-secondary input-button" onclick="copyTransferLink()" id="copy-btn">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/>
+                                <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <div id="send-file-card-2"></div>
+
+                    <div id="send-status">
+                        <div class="status-message">
+                            <div class="status-dot"></div>
+                            <span>Waiting for recipient to connect...</span>
+                        </div>
+                    </div>
+
+                    <div id="send-progress" class="hidden">
+                        <div class="progress-container">
+                            <div class="progress-text">
+                                <span>Transferring...</span>
+                                <span id="send-progress-percent">0%</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" id="send-progress-fill" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button class="btn btn-primary w-full btn-lg hidden" onclick="sendFile()" id="send-file-btn">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="m22 2-7 20-4-9-9-4 20-7z"/>
+                        </svg>
+                        Send File
+                    </button>
+
+                    <div id="send-complete" class="hidden">
+                        <div class="status-message" style="background-color: hsl(var(--primary) / 0.1); color: hsl(var(--primary));">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M20 6 9 17l-5-5"/>
+                            </svg>
+                            <span>File sent successfully!</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Receive Page -->
+    <div id="receive-page" class="hidden">
+        <header class="header">
+            <button class="btn btn-ghost btn-icon" onclick="showHomePage()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="m12 19-7-7 7-7"/>
+                </svg>
+            </button>
+            <button class="btn btn-ghost btn-icon theme-toggle" onclick="toggleTheme()">
+                <svg class="sun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="5"/>
+                    <path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72l1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+                </svg>
+                <svg class="moon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                </svg>
+            </button>
+        </header>
+
+        <main class="main">
+            <div class="page-container">
+                <!-- Enter Transfer ID Step -->
+                <div id="receive-step-1">
+                    <div class="page-header">
+                        <h1>Receive Files</h1>
+                        <p>Enter the transfer ID to connect and receive files</p>
+                    </div>
+
+                    <div class="wifi-animation">
+                        <div class="wifi-ring wifi-ring-1"></div>
+                        <div class="wifi-ring wifi-ring-2"></div>
+                        <div class="wifi-ring wifi-ring-3"></div>
+                        <div class="wifi-icon-container">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 20h.01"/>
+                                <path d="M2 8.82a15 15 0 0 1 20 0"/>
+                                <path d="M5 12.859a10 10 0 0 1 14 0"/>
+                                <path d="M8.5 16.429a5 5 0 0 1 7 0"/>
+                            </svg>
+                        </div>
+                    </div>
+
+                    <input type="text" class="input mb-4" id="transfer-id-input" placeholder="Enter Transfer ID">
+                    
+                    <button class="btn btn-primary w-full btn-lg" onclick="connectToSender()" id="connect-btn">
+                        Connect to Sender
+                    </button>
+
+                    <div id="receive-error" class="error-message hidden"></div>
+                </div>
+
+                <!-- Connecting Step -->
+                <div id="receive-step-2" class="hidden">
+                    <div class="page-header">
+                        <h1>Connecting...</h1>
+                        <p>Establishing connection with sender</p>
+                    </div>
+
+                    <div class="status-message">
+                        <div class="spinner"></div>
+                        <span>Connecting to sender...</span>
+                    </div>
+                </div>
+
+                <!-- Receiving Step -->
+                <div id="receive-step-3" class="hidden">
+                    <div class="page-header">
+                        <h1>Receiving File</h1>
+                        <p id="receive-file-info">Preparing to receive file...</p>
+                    </div>
+
+                    <div class="wifi-animation active" id="receive-wifi-animation">
+                        <div class="wifi-ring wifi-ring-1"></div>
+                        <div class="wifi-ring wifi-ring-2"></div>
+                        <div class="wifi-ring wifi-ring-3"></div>
+                        <div class="wifi-icon-container">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 20h.01"/>
+                                <path d="M2 8.82a15 15 0 0 1 20 0"/>
+                                <path d="M5 12.859a10 10 0 0 1 14 0"/>
+                                <path d="M8.5 16.429a5 5 0 0 1 7 0"/>
+                            </svg>
+                        </div>
+                    </div>
+
+                    <div id="receive-progress">
+                        <div class="progress-container">
+                            <div class="progress-text">
+                                <span>Receiving...</span>
+                                <span id="receive-progress-percent">0%</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" id="receive-progress-fill" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="status-message">
+                        <div class="status-dot"></div>
+                        <span>Please keep this window open</span>
+                    </div>
+                </div>
+
+                <!-- Complete Step -->
+                <div id="receive-step-4" class="hidden">
+                    <div class="page-header">
+                        <h1>Transfer Complete</h1>
+                        <p id="receive-complete-info">File received successfully</p>
+                    </div>
+
+                    <div class="status-message" style="background-color: hsl(var(--primary) / 0.1); color: hsl(var(--primary));">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M20 6 9 17l-5-5"/>
+                        </svg>
+                        <span>Ready to download</span>
+                    </div>
+
+                    <button class="btn btn-primary w-full btn-lg" onclick="downloadFile()" id="download-btn">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                            <polyline points="7,10 12,15 17,10"/>
+                            <line x1="12" x2="12" y1="15" y2="3"/>
+                        </svg>
+                        Download File
+                    </button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Debug Connection Button (for development) -->
+    <button onclick="debugConnection()" class="btn btn-secondary" style="position: fixed; top: 1rem; right: 1rem; z-index: 1000;">
+        Debug Connection
+    </button>
+
+    <script>
+        // Global variables
+        let selectedFile = null;
+        let transferId = null;
+        let socket = null;
+        let receivedChunks = [];
+        let fileMetadata = null;
+        let totalBytesReceived = 0;
+        let isConnected = false;
+
+        // Theme management
+        function toggleTheme() {
+            document.documentElement.classList.toggle('dark');
+            localStorage.setItem('theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light');
+        }
+
+        // Initialize theme from localStorage
+        if (localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        }
+
+        // Navigation functions
+        function showHomePage() {
+            document.getElementById('home-page').classList.remove('hidden');
+            document.getElementById('send-page').classList.add('hidden');
+            document.getElementById('receive-page').classList.add('hidden');
+            resetSendPage();
+            resetReceivePage();
+            if (socket) {
+                socket.close();
+                socket = null;
+            }
+        }
+
+        function showSendPage() {
+            document.getElementById('home-page').classList.add('hidden');
+            document.getElementById('send-page').classList.remove('hidden');
+            document.getElementById('receive-page').classList.add('hidden');
+            
+            // Check URL for transfer ID
+            const urlParams = new URLSearchParams(window.location.search);
+            const id = urlParams.get('id');
+            if (id) {
+                // This is a receive link, redirect to receive page
+                showReceivePage(id);
+            }
+        }
+
+        function showReceivePage(id = null) {
+            document.getElementById('home-page').classList.add('hidden');
+            document.getElementById('send-page').classList.add('hidden');
+            document.getElementById('receive-page').classList.remove('hidden');
+            
+            if (id) {
+                document.getElementById('transfer-id-input').value = id;
+                connectToSender();
+            }
+        }
+
+        // Utility functions
+        function generateId(length = 8) {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+            let result = '';
+            for (let i = 0; i < length; i++) {
+                result += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return result;
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        function getFileIcon(type) {
+            const icons = {
+                'image': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>',
+                'video': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m22 8-6 4 6 4V8Z"/><rect width="14" height="12" x="2" y="6" rx="2" ry="2"/></svg>',
+                'audio': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>',
+                'text': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14,2 14,8 20,8"/><line x1="16" x2="8" y1="13" y2="13"/><line x1="16" x2="8" y1="17" y2="17"/><line x1="10" x2="8" y1="9" y2="9"/></svg>',
+                'default': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14,2 14,8 20,8"/></svg>'
+            };
+            const mainType = type.split('/')[0];
+            return icons[mainType] || icons.default;
+        }
+
+        function createFileCard(file) {
+            const fileType = file.type || 'application/octet-stream';
+            const icon = getFileIcon(fileType);
+            
+            return `
+                <div class="file-card">
+                    <div class="file-card-icon">
+                        ${icon}
+                    </div>
+                    <div class="file-card-info">
+                        <div class="file-card-name">${file.name}</div>
+                        <div class="file-card-meta">
+                            <div class="file-card-dot"></div>
+                            ${formatFileSize(file.size)} • ${fileType.split('/')[1] || 'File'}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // File handling functions
+        function handleDragEnter(e) {
+            e.preventDefault();
+            e.currentTarget.classList.add('dragover');
+        }
+
+        function handleDragLeave(e) {
+            e.preventDefault();
+            e.currentTarget.classList.remove('dragover');
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            e.currentTarget.classList.remove('dragover');
+            
+            if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                const file = e.dataTransfer.files[0];
+                handleFileSelection(file);
+            }
+        }
+
+        function handleFileSelect(e) {
+            if (e.target.files && e.target.files.length > 0) {
+                const file = e.target.files[0];
+                handleFileSelection(file);
+            }
+        }
+
+        function handleFileSelection(file) {
+            selectedFile = file;
+            document.getElementById('send-file-card').innerHTML = createFileCard(file);
+            
+            // Show step 2
+            document.getElementById('send-step-1').classList.add('hidden');
+            document.getElementById('send-step-2').classList.remove('hidden');
+        }
+
+        // Transfer functions
+        function generateTransferLink() {
+            if (!selectedFile) return;
+            
+            transferId = generateId();
+            const link = `${window.location.origin}${window.location.pathname}?id=${transferId}`;
+            
+            document.getElementById('transfer-link').value = link;
+            document.getElementById('send-file-card-2').innerHTML = createFileCard(selectedFile);
+            
+            // Show step 3
+            document.getElementById('send-step-2').classList.add('hidden');
+            document.getElementById('send-step-3').classList.remove('hidden');
+            
+            // Connect to WebSocket
+            connectWebSocket('sender');
+        }
+
+        function connectWebSocket(role) {
+            const wsUrl = `ws://${window.location.hostname}:8000/ws`;
+            socket = new WebSocket(wsUrl);
+            
+            socket.onopen = function() {
+                console.log('WebSocket connected');
+                isConnected = true;
+                
+                // Register with the server
+                const registerMessage = {
+                    type: 'register',
+                    connectionId: transferId || document.getElementById('transfer-id-input').value,
+                    role: role
+                };
+                socket.send(JSON.stringify(registerMessage));
+                
+                if (role === 'sender') {
+                    document.getElementById('send-wifi-animation').classList.add('active');
+                    document.getElementById('send-file-btn').classList.remove('hidden');
+                } else {
+                    document.getElementById('receive-step-2').classList.add('hidden');
+                    document.getElementById('receive-step-3').classList.remove('hidden');
+                }
+            };
+            
+            socket.onmessage = function(event) {
+                if (typeof event.data === 'string') {
+                    try {
+                        const data = JSON.parse(event.data);
+                        handleTextMessage(data, role);
+                    } catch (e) {
+                        console.error('Failed to parse message:', e);
+                    }
+                } else {
+                    // Binary data (file chunks)
+                    if (role === 'receiver') {
+                        handleFileChunk(event.data);
+                    }
+                }
+            };
+            
+            socket.onerror = function(error) {
+                console.error('WebSocket error:', error);
+                showError('Connection failed. Please try again.');
+            };
+            
+            socket.onclose = function() {
+                console.log('WebSocket disconnected');
+                isConnected = false;
+                if (role === 'sender') {
+                    document.getElementById('send-wifi-animation').classList.remove('active');
+                }
+            };
+        }
+
+        function handleTextMessage(data, role) {
+            if (data.type === 'file_info' && role === 'receiver') {
+                fileMetadata = data;
+                document.getElementById('receive-file-info').textContent = 
+                    `${data.name} (${formatFileSize(data.size)})`;
+                receivedChunks = [];
+                totalBytesReceived = 0;
+            } else if (data.type === 'transfer_complete') {
+                if (role === 'sender') {
+                    document.getElementById('send-progress').classList.add('hidden');
+                    document.getElementById('send-complete').classList.remove('hidden');
+                } else {
+                    completeFileTransfer();
+                }
+            } else if (data.type === 'recipient_connected' && role === 'sender') {
+                document.getElementById('send-status').innerHTML = `
+                    <div class="status-message" style="background-color: hsl(var(--primary) / 0.1); color: hsl(var(--primary));">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M20 6 9 17l-5-5"/>
+                        </svg>
+                        <span>Recipient connected! Ready to send.</span>
+                    </div>
+                `;
+            }
+        }
+
+        function sendFile() {
+            if (!selectedFile || !socket || socket.readyState !== WebSocket.OPEN) return;
+            
+            document.getElementById('send-file-btn').classList.add('hidden');
+            document.getElementById('send-progress').classList.remove('hidden');
+            
+            const targetId = transferId;
+            
+            // Send file metadata first
+            const fileInfo = {
+                type: 'file_info',
+                target_id: targetId,
+                name: selectedFile.name,
+                size: selectedFile.size,
+                mime_type: selectedFile.type || 'application/octet-stream'
+            };
+            socket.send(JSON.stringify(fileInfo));
+            
+            // Send file in chunks
+            const CHUNK_SIZE = 64 * 1024; // 64KB chunks
+            let offset = 0;
+            const fileReader = new FileReader();
+            
+            fileReader.onload = function(e) {
+                if (socket && socket.readyState === WebSocket.OPEN) {
+                    // Send target_id first as JSON, then binary data
+                    const message = {
+                        target_id: targetId
+                    };
+                    socket.send(JSON.stringify(message));
+                    socket.send(e.target.result);
+                    
+                    offset += e.target.result.byteLength;
+                    const progress = Math.min(100, Math.floor((offset / selectedFile.size) * 100));
+                    
+                    document.getElementById('send-progress-percent').textContent = progress + '%';
+                    document.getElementById('send-progress-fill').style.width = progress + '%';
+                    
+                    if (offset < selectedFile.size) {
+                        // Read next chunk
+                        const slice = selectedFile.slice(offset, offset + CHUNK_SIZE);
+                        fileReader.readAsArrayBuffer(slice);
+                    } else {
+                        // Transfer complete
+                        const completeMessage = {
+                            type: 'transfer_complete',
+                            target_id: targetId
+                        };
+                        socket.send(JSON.stringify(completeMessage));
+                        
+                        setTimeout(() => {
+                            document.getElementById('send-progress').classList.add('hidden');
+                            document.getElementById('send-complete').classList.remove('hidden');
+                        }, 500);
+                    }
+                }
+            };
+            
+            // Start reading first chunk
+            const slice = selectedFile.slice(offset, offset + CHUNK_SIZE);
+            fileReader.readAsArrayBuffer(slice);
+        }
+
+        function connectToSender() {
+            const id = document.getElementById('transfer-id-input').value.trim();
+            if (!id) {
+                showError('Please enter a transfer ID');
+                return;
+            }
+            
+            transferId = id;
+            document.getElementById('receive-step-1').classList.add('hidden');
+            document.getElementById('receive-step-2').classList.remove('hidden');
+            
+            connectWebSocket('receiver');
+        }
+
+        function handleFileChunk(chunk) {
+            receivedChunks.push(chunk);
+            totalBytesReceived += chunk.byteLength;
+            
+            if (fileMetadata && fileMetadata.size > 0) {
+                const progress = Math.min(100, Math.floor((totalBytesReceived / fileMetadata.size) * 100));
+                document.getElementById('receive-progress-percent').textContent = progress + '%';
+                document.getElementById('receive-progress-fill').style.width = progress + '%';
+                
+                if (totalBytesReceived >= fileMetadata.size) {
+                    completeFileTransfer();
+                }
+            }
+        }
+
+        function completeFileTransfer() {
+            if (receivedChunks.length === 0) return;
+            
+            const blob = new Blob(receivedChunks, { type: fileMetadata.mime_type || 'application/octet-stream' });
+            const url = URL.createObjectURL(blob);
+            
+            document.getElementById('download-btn').onclick = function() {
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = fileMetadata.name;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+            };
+            
+            document.getElementById('receive-complete-info').textContent = 
+                `${fileMetadata.name} (${formatFileSize(fileMetadata.size)})`;
+            
+            document.getElementById('receive-step-3').classList.add('hidden');
+            document.getElementById('receive-step-4').classList.remove('hidden');
+        }
+
+        function copyTransferLink() {
+            const link = document.getElementById('transfer-link').value;
+            navigator.clipboard.writeText(link).then(() => {
+                const btn = document.getElementById('copy-btn');
+                btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg>';
+                setTimeout(() => {
+                    btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>';
+                }, 2000);
+            }).catch(() => {
+                // Fallback for older browsers
+                document.getElementById('transfer-link').select();
+                document.execCommand('copy');
+            });
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('receive-error');
+            errorDiv.textContent = message;
+            errorDiv.classList.remove('hidden');
+        }
+
+        function debugConnection() {
+            console.log('Connection Status:', {
+                socketState: socket ? socket.readyState : 'no socket',
+                transferId: transferId,
+                isConnected: isConnected,
+                fileMetadata: fileMetadata,
+                receivedChunks: receivedChunks.length,
+                totalReceived: totalBytesReceived
+            });
+        }
+
+        function resetSendPage() {
+            selectedFile = null;
+            transferId = null;
+            document.getElementById('send-step-1').classList.remove('hidden');
+            document.getElementById('send-step-2').classList.add('hidden');
+            document.getElementById('send-step-3').classList.add('hidden');
+            document.getElementById('send-progress').classList.add('hidden');
+            document.getElementById('send-complete').classList.add('hidden');
+            document.getElementById('send-file-btn').classList.add('hidden');
+            document.getElementById('send-wifi-animation').classList.remove('active');
+            document.getElementById('file-input').value = '';
+        }
+
+        function resetReceivePage() {
+            receivedChunks = [];
+            fileMetadata = null;
+            totalBytesReceived = 0;
+            document.getElementById('receive-step-1').classList.remove('hidden');
+            document.getElementById('receive-step-2').classList.add('hidden');
+            document.getElementById('receive-step-3').classList.add('hidden');
+            document.getElementById('receive-step-4').classList.add('hidden');
+            document.getElementById('receive-error').classList.add('hidden');
+            document.getElementById('transfer-id-input').value = '';
+        }
+
+        // Initialize page based on URL
+        window.addEventListener('load', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const id = urlParams.get('id');
+            if (id) {
+                showReceivePage(id);
+            }
+        });
+    </script>
+</body>
+</html>
